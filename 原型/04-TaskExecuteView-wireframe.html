@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskExecuteView - 任务执行页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        
+        .breadcrumb {
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .breadcrumb span {
+            margin: 0 5px;
+        }
+        
+        .main-container {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .video-area {
+            flex: 1;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .video-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .audio-stream {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 200px;
+        }
+        
+        .scale-bar-area {
+            height: 120px;
+            background: #fafafa;
+            border-top: 1px solid #eee;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .scale-bar-wrapper {
+            position: relative;
+            height: 60px;
+        }
+        
+        .scale-bar {
+            width: 100%;
+            height: 8px;
+            background: #e4e7ed;
+            border-radius: 4px;
+            position: relative;
+            margin: 26px 0;
+        }
+        
+        .scale-bar-progress {
+            height: 100%;
+            background: #409eff;
+            border-radius: 4px;
+            width: 30%;
+            transition: width 1s ease;
+        }
+        
+        .scale-bar-text {
+            position: absolute;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .scale-bar-text.start {
+            left: 0;
+            top: 0;
+        }
+        
+        .scale-bar-text.end {
+            right: 0;
+            top: 0;
+        }
+        
+        .scale-bar-item {
+            position: absolute;
+            top: 18px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            transform: translateX(-50%);
+        }
+        
+        .scale-bar-flaw {
+            background: #f56c6c;
+            color: white;
+        }
+        
+        .scale-bar-flaw.unconfirmed {
+            background: #e6a23c;
+            color: white;
+        }
+        
+        .scale-bar-agv {
+            background: #67c23a;
+            color: white;
+            font-size: 14px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+        
+        .sidebar {
+            width: 400px;
+            background: white;
+            border-left: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin: 10px;
+            background: white;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            background: #fafafa;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #409eff;
+            border-color: #409eff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #67c23a;
+            border-color: #67c23a;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #f56c6c;
+            border-color: #f56c6c;
+            color: white;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #67c23a;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .info-item {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .info-label {
+            width: 140px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .confirmed-flaw {
+            color: #f56c6c;
+            font-weight: bold;
+        }
+        
+        .unconfirmed-flaw {
+            color: #e6a23c;
+            font-weight: bold;
+        }
+        
+        .count-animation {
+            display: inline-block;
+            animation: countUp 3s ease-out;
+        }
+        
+        @keyframes countUp {
+            from { opacity: 0.5; }
+            to { opacity: 1; }
+        }
+        
+        .flaw-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .flaw-table th,
+        .flaw-table td {
+            padding: 8px 12px;
+            border: 1px solid #eee;
+            text-align: left;
+            font-size: 12px;
+        }
+        
+        .flaw-table th {
+            background: #fafafa;
+            font-weight: bold;
+        }
+        
+        .flaw-table tbody tr.confirmed {
+            background: #fef0f0;
+        }
+        
+        .flaw-table tbody tr.unconfirmed {
+            background: #fdf6ec;
+        }
+        
+        .link {
+            color: #409eff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 1150px;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-body {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .modal-image {
+            width: 800px;
+            height: 600px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            border-radius: 8px;
+        }
+        
+        .modal-info {
+            width: 300px;
+        }
+        
+        .cam-selector {
+            width: 120px;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="breadcrumb">
+            地铁隧道巡线车智能巡检系统 <span>/</span> 任务列表 <span>/</span> 任务巡视
+        </div>
+        
+        <div class="main-container">
+            <div class="content-area">
+                <div class="video-area">
+                    <div style="text-align: center;">
+                        实时视频流显示区域
+                        <br>
+                        <small style="color: #ccc;">摄像头1 - 前方视角</small>
+                    </div>
+                    <div class="audio-stream" style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px;">
+                        音频控制面板
+                    </div>
+                </div>
+                
+                <div class="scale-bar-area">
+                    <div class="scale-bar-wrapper">
+                        <div class="scale-bar-text start">0m</div>
+                        <div class="scale-bar-text end">500m</div>
+                        <div class="scale-bar">
+                            <div class="scale-bar-progress"></div>
+                        </div>
+                        
+                        <!-- 故障点标记 -->
+                        <div class="scale-bar-item scale-bar-flaw" style="left: 20%;" title="隧道壁面裂缝">📍</div>
+                        <div class="scale-bar-item scale-bar-flaw unconfirmed" style="left: 45%;" title="疑似渗水点">📍</div>
+                        
+                        <!-- AGV位置 -->
+                        <div class="scale-bar-item scale-bar-agv" style="left: 30%;" title="当前位置">🚛</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-header">
+                        控制台
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-body">
+                        <div class="control-buttons">
+                            <button class="btn btn-primary">刷新监控</button>
+                            <select class="cam-selector">
+                                <option>摄像头1</option>
+                                <option>摄像头2</option>
+                                <option>摄像头3</option>
+                                <option>摄像头4</option>
+                            </select>
+                            <button class="btn btn-success">完成巡检</button>
+                            <button class="btn btn-danger">终止巡检</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        车辆状态
+                        <label class="switch">
+                            <input type="checkbox" id="agvSwitch" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-item">
+                            <div class="info-label">📄 巡视任务编号</div>
+                            <div class="info-value">TASK202312010002</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">⏰ 车辆系统时间</div>
+                            <div class="info-value" id="systemTime">2023-12-01 14:35:42</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">📍 已行驶距离</div>
+                            <div class="info-value">
+                                <span class="count-animation" id="distance">150.25</span> 米
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">⚠️ 故障总计</div>
+                            <div class="info-value">2</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">✅ 已确定故障</div>
+                            <div class="info-value confirmed-flaw">1</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">❓ 疑似故障</div>
+                            <div class="info-value unconfirmed-flaw">1</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">故障历史</div>
+                    <div class="card-body">
+                        <table class="flaw-table">
+                            <thead>
+                                <tr>
+                                    <th>故障名称</th>
+                                    <th>故障类型</th>
+                                    <th>故障位置</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="confirmed" onclick="viewFlawDetail('隧道壁面裂缝')">
+                                    <td><a href="#" class="link">隧道壁面裂缝</a></td>
+                                    <td>结构缺陷</td>
+                                    <td>100m</td>
+                                </tr>
+                                <tr class="unconfirmed" onclick="viewFlawDetail('疑似渗水点')">
+                                    <td><a href="#" class="link">疑似渗水点</a></td>
+                                    <td>渗漏问题</td>
+                                    <td>225m</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 故障详情模态框 -->
+    <div class="modal" id="flawModal">
+        <div class="modal-content">
+            <div class="modal-header" style="font-size: 18px; font-weight: bold; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                故障详情
+            </div>
+            
+            <div class="modal-body">
+                <div class="modal-image">
+                    故障实时图片
+                    <br>
+                    (点击可预览放大)
+                </div>
+                
+                <div class="modal-info">
+                    <div class="card">
+                        <div class="card-header">故障信息</div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-label">故障名称</div>
+                                <div class="info-value">隧道壁面裂缝</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">故障类型</div>
+                                <div class="info-value">结构缺陷</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">故障描述</div>
+                                <div class="info-value">发现隧道左侧壁面存在约20cm长的裂缝</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">故障位置</div>
+                                <div class="info-value">100m</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">是否属实</div>
+                                <div class="info-value">
+                                    <label><input type="radio" name="confirmed" value="true"> 是</label>
+                                    <label style="margin-left: 20px;"><input type="radio" name="confirmed" value="false"> 否</label>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">补充说明</div>
+                                <div class="info-value">
+                                    <textarea style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;" placeholder="请输入内容"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn" onclick="closeFlawModal()">取 消</button>
+                <button class="btn btn-primary" style="margin-left: 10px;">确 定</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function viewFlawDetail(flawName) {
+            document.getElementById('flawModal').classList.add('show');
+        }
+        
+        function closeFlawModal() {
+            document.getElementById('flawModal').classList.remove('show');
+        }
+        
+        // 模拟实时更新
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN');
+            document.getElementById('systemTime').textContent = timeString;
+        }
+        
+        function updateDistance() {
+            const distance = document.getElementById('distance');
+            let currentValue = parseFloat(distance.textContent);
+            currentValue += Math.random() * 2;
+            distance.textContent = currentValue.toFixed(2);
+            
+            // 更新进度条
+            const progress = document.querySelector('.scale-bar-progress');
+            const percentage = (currentValue / 500) * 100;
+            progress.style.width = Math.min(percentage, 100) + '%';
+            
+            // 更新AGV位置
+            const agv = document.querySelector('.scale-bar-agv');
+            agv.style.left = Math.min(percentage, 100) + '%';
+        }
+        
+        // 启动实时更新
+        setInterval(updateTime, 1000);
+        setInterval(updateDistance, 3000);
+        
+        // AGV控制开关
+        document.getElementById('agvSwitch').addEventListener('change', function() {
+            if (this.checked) {
+                console.log('AGV 开始前进');
+            } else {
+                console.log('AGV 停止');
+            }
+        });
+        
+        // 模拟故障点点击
+        document.querySelectorAll('.scale-bar-flaw').forEach(flaw => {
+            flaw.addEventListener('click', function() {
+                const title = this.getAttribute('title');
+                viewFlawDetail(title);
+            });
+        });
+    </script>
+</body>
+</html> 

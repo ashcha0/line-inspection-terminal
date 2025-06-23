@@ -1,0 +1,14 @@
+{
+  "name": "agv-mock-server",
+  "version": "1.0.0",
+  "description": "Mock server for the AGV Handheld Terminal project.",
+  "main": "mock-server.js",
+  "scripts": {
+    "start": "node mock-server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

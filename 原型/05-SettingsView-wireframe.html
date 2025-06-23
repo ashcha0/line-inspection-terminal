@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SettingsView - 系统设置页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #333;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #409eff;
+        }
+        
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-item.half-width {
+            flex-direction: row;
+            gap: 20px;
+        }
+        
+        .form-item.half-width .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-label.required::after {
+            content: " *";
+            color: #f56c6c;
+        }
+        
+        .form-input {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+        
+        .form-section {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fafafa;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #409eff;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: "⚙️";
+            margin-right: 8px;
+        }
+        
+        .section-title.vehicle::before {
+            content: "🚛";
+        }
+        
+        .section-title.cloud::before {
+            content: "☁️";
+        }
+        
+        .section-title.camera::before {
+            content: "📹";
+        }
+        
+        .camera-group {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        
+        .camera-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #666;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            min-width: 80px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: #409eff;
+            border-color: #409eff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #337ecc;
+            border-color: #337ecc;
+        }
+        
+        .btn-cancel {
+            background: #f5f5f5;
+            border-color: #ddd;
+            color: #666;
+        }
+        
+        .btn-cancel:hover {
+            background: #e8e8e8;
+            border-color: #ccc;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        .form-validation {
+            display: none;
+            color: #f56c6c;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .form-input.error {
+            border-color: #f56c6c;
+            box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
+        }
+        
+        .form-input.error + .form-validation {
+            display: block;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .status-indicator.connected {
+            background: #67c23a;
+            animation: pulse-green 2s infinite;
+        }
+        
+        .status-indicator.disconnected {
+            background: #f56c6c;
+        }
+        
+        @keyframes pulse-green {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <div class="page-title">系统设置</div>
+        
+        <form class="form-container" id="settingsForm">
+            <!-- 车辆控制设置 -->
+            <div class="form-section">
+                <div class="section-title vehicle">车辆控制设置</div>
+                
+                <div class="form-item">
+                    <label class="form-label required">车辆IP地址</label>
+                    <input type="text" class="form-input" name="host" value="192.168.1.100" placeholder="请输入车辆IP地址">
+                    <div class="form-validation">请输入有效的IP地址</div>
+                    <div class="help-text">用于连接AGV控制系统的IP地址</div>
+                </div>
+                
+                <div class="form-item half-width">
+                    <div class="form-group">
+                        <label class="form-label required">车辆控制端口</label>
+                        <input type="number" class="form-input" name="drivePort" value="8001" placeholder="请输入端口号">
+                        <div class="form-validation">请输入有效的端口号 (1-65535)</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label required">分析程序端口</label>
+                        <input type="number" class="form-input" name="analysisPort" value="8002" placeholder="请输入端口号">
+                        <div class="form-validation">请输入有效的端口号 (1-65535)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 云端平台设置 -->
+            <div class="form-section">
+                <div class="section-title cloud">云端平台设置</div>
+                
+                <div class="form-item">
+                    <label class="form-label required">云端平台地址</label>
+                    <input type="url" class="form-input" name="cloudUrl" value="https://api.inspection.com" placeholder="请输入云端平台地址">
+                    <div class="form-validation">请输入有效的URL地址</div>
+                    <div class="help-text">数据上传和远程监控平台地址</div>
+                </div>
+            </div>
+            
+            <!-- 摄像头设置 -->
+            <div class="form-section">
+                <div class="section-title camera">摄像头设置 <span class="status-indicator connected"></span></div>
+                
+                <!-- 摄像头1 -->
+                <div class="camera-group">
+                    <div class="camera-title">摄像头1 - 前方主视角</div>
+                    <div class="form-item">
+                        <label class="form-label">摄像头1地址</label>
+                        <input type="text" class="form-input" name="cam1" value="rtsp://192.168.1.201:554/stream1" placeholder="请输入摄像头地址">
+                        <div class="help-text">支持RTSP、HTTP等协议</div>
+                    </div>
+                    <div class="form-item half-width">
+                        <div class="form-group">
+                            <label class="form-label">摄像头1账号</label>
+                            <input type="text" class="form-input" name="username1" value="admin" placeholder="请输入账号">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">摄像头1密码</label>
+                            <input type="password" class="form-input" name="password1" value="password123" placeholder="请输入密码">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 摄像头2 -->
+                <div class="camera-group">
+                    <div class="camera-title">摄像头2 - 左侧视角</div>
+                    <div class="form-item">
+                        <label class="form-label">摄像头2地址</label>
+                        <input type="text" class="form-input" name="cam2" value="rtsp://192.168.1.202:554/stream1" placeholder="请输入摄像头地址">
+                    </div>
+                    <div class="form-item half-width">
+                        <div class="form-group">
+                            <label class="form-label">摄像头2账号</label>
+                            <input type="text" class="form-input" name="username2" value="admin" placeholder="请输入账号">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">摄像头2密码</label>
+                            <input type="password" class="form-input" name="password2" value="password123" placeholder="请输入密码">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 摄像头3 -->
+                <div class="camera-group">
+                    <div class="camera-title">摄像头3 - 右侧视角</div>
+                    <div class="form-item">
+                        <label class="form-label">摄像头3地址</label>
+                        <input type="text" class="form-input" name="cam3" value="rtsp://192.168.1.203:554/stream1" placeholder="请输入摄像头地址">
+                    </div>
+                    <div class="form-item half-width">
+                        <div class="form-group">
+                            <label class="form-label">摄像头3账号</label>
+                            <input type="text" class="form-input" name="username3" value="admin" placeholder="请输入账号">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">摄像头3密码</label>
+                            <input type="password" class="form-input" name="password3" value="password123" placeholder="请输入密码">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 摄像头4 -->
+                <div class="camera-group">
+                    <div class="camera-title">摄像头4 - 后方视角</div>
+                    <div class="form-item">
+                        <label class="form-label">摄像头4地址</label>
+                        <input type="text" class="form-input" name="cam4" value="rtsp://192.168.1.204:554/stream1" placeholder="请输入摄像头地址">
+                    </div>
+                    <div class="form-item half-width">
+                        <div class="form-group">
+                            <label class="form-label">摄像头4账号</label>
+                            <input type="text" class="form-input" name="username4" value="admin" placeholder="请输入账号">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">摄像头4密码</label>
+                            <input type="password" class="form-input" name="password4" value="password123" placeholder="请输入密码">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        <div class="btn-group">
+            <button type="button" class="btn btn-cancel" onclick="onCancel()">取消</button>
+            <button type="button" class="btn btn-primary" onclick="onSubmit()">保存设置</button>
+        </div>
+    </div>
+    
+    <script>
+        // 表单验证规则
+        const validationRules = {
+            host: {
+                required: true,
+                pattern: /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
+                message: '请输入有效的IP地址'
+            },
+            drivePort: {
+                required: true,
+                min: 1,
+                max: 65535,
+                message: '请输入有效的端口号 (1-65535)'
+            },
+            analysisPort: {
+                required: true,
+                min: 1,
+                max: 65535,
+                message: '请输入有效的端口号 (1-65535)'
+            },
+            cloudUrl: {
+                required: true,
+                pattern: /^https?:\/\/.+/,
+                message: '请输入有效的URL地址'
+            }
+        };
+        
+        // 验证单个字段
+        function validateField(name, value) {
+            const rule = validationRules[name];
+            if (!rule) return true;
+            
+            if (rule.required && !value) {
+                return false;
+            }
+            
+            if (rule.pattern && !rule.pattern.test(value)) {
+                return false;
+            }
+            
+            if (rule.min && parseInt(value) < rule.min) {
+                return false;
+            }
+            
+            if (rule.max && parseInt(value) > rule.max) {
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 实时验证
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('blur', function() {
+                const isValid = validateField(this.name, this.value);
+                if (isValid) {
+                    this.classList.remove('error');
+                } else {
+                    this.classList.add('error');
+                }
+            });
+            
+            input.addEventListener('input', function() {
+                if (this.classList.contains('error')) {
+                    const isValid = validateField(this.name, this.value);
+                    if (isValid) {
+                        this.classList.remove('error');
+                    }
+                }
+            });
+        });
+        
+        // 保存设置
+        function onSubmit() {
+            const form = document.getElementById('settingsForm');
+            const formData = new FormData(form);
+            let hasError = false;
+            
+            // 验证所有必填字段
+            for (let [name, value] of formData.entries()) {
+                if (validationRules[name]) {
+                    const input = form.querySelector(`[name="${name}"]`);
+                    const isValid = validateField(name, value);
+                    if (!isValid) {
+                        input.classList.add('error');
+                        hasError = true;
+                    } else {
+                        input.classList.remove('error');
+                    }
+                }
+            }
+            
+            if (hasError) {
+                alert('请检查并修正表单中的错误');
+                return;
+            }
+            
+            // 模拟保存成功
+            alert('设置已保存成功！\n\n系统将重新检查连接状态...');
+            
+            // 模拟返回初始化页面
+            if (confirm('是否返回系统初始化页面重新检测？')) {
+                console.log('返回初始化页面');
+            }
+        }
+        
+        // 取消设置
+        function onCancel() {
+            if (confirm('确定要取消设置吗？未保存的更改将丢失。')) {
+                console.log('取消设置');
+            }
+        }
+        
+        // 模拟连接状态检测
+        function updateConnectionStatus() {
+            const indicators = document.querySelectorAll('.status-indicator');
+            indicators.forEach(indicator => {
+                // 随机模拟连接状态
+                const isConnected = Math.random() > 0.3;
+                indicator.className = `status-indicator ${isConnected ? 'connected' : 'disconnected'}`;
+            });
+        }
+        
+        // 定期更新连接状态
+        setInterval(updateConnectionStatus, 5000);
+        
+        // 密码显示/隐藏切换
+        document.querySelectorAll('input[type="password"]').forEach(input => {
+            const wrapper = input.parentElement;
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.innerHTML = '👁️';
+            toggleBtn.style.cssText = 'position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; font-size: 14px;';
+            
+            wrapper.style.position = 'relative';
+            wrapper.appendChild(toggleBtn);
+            
+            toggleBtn.addEventListener('click', function() {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.innerHTML = '🙈';
+                } else {
+                    input.type = 'password';
+                    this.innerHTML = '👁️';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskDetailView - 任务详情页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        
+        .breadcrumb {
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .breadcrumb span {
+            margin: 0 5px;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            padding: 8px 16px;
+            background: #409eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .main-container {
+            flex: 1;
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+        
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .image-area {
+            flex: 1;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .scale-bar-area {
+            height: 100px;
+            background: #fafafa;
+            border-top: 1px solid #eee;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .scale-bar-wrapper {
+            position: relative;
+            height: 40px;
+        }
+        
+        .scale-bar {
+            width: 100%;
+            height: 8px;
+            background: #e4e7ed;
+            border-radius: 4px;
+            position: relative;
+            margin: 16px 0;
+        }
+        
+        .scale-bar-progress {
+            height: 100%;
+            background: #409eff;
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        .scale-bar-text {
+            position: absolute;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .scale-bar-text.start {
+            left: 0;
+            top: -15px;
+        }
+        
+        .scale-bar-text.end {
+            right: 0;
+            top: -15px;
+        }
+        
+        .scale-bar-flaw {
+            position: absolute;
+            top: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            transform: translateX(-50%);
+        }
+        
+        .scale-bar-flaw.confirmed {
+            background: #f56c6c;
+            color: white;
+        }
+        
+        .scale-bar-flaw.unconfirmed {
+            background: #e6a23c;
+            color: white;
+        }
+        
+        .scale-bar-flaw.false {
+            background: #909399;
+            color: white;
+        }
+        
+        .sidebar {
+            width: 400px;
+            background: white;
+            border-left: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        .card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin: 10px;
+            background: white;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            background: #fafafa;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .info-label {
+            width: 120px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            flex: 1;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .confirmed-flaw {
+            color: #f56c6c;
+            font-weight: bold;
+        }
+        
+        .unconfirmed-flaw {
+            color: #e6a23c;
+            font-weight: bold;
+        }
+        
+        .flaw-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .flaw-table th,
+        .flaw-table td {
+            padding: 8px 12px;
+            border: 1px solid #eee;
+            text-align: left;
+            font-size: 12px;
+        }
+        
+        .flaw-table th {
+            background: #fafafa;
+            font-weight: bold;
+        }
+        
+        .flaw-table tbody tr.confirmed {
+            background: #fef0f0;
+        }
+        
+        .flaw-table tbody tr.unconfirmed {
+            background: #fdf6ec;
+        }
+        
+        .flaw-table tbody tr.false {
+            background: #f4f4f5;
+        }
+        
+        .link {
+            color: #409eff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 1150px;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-body {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .modal-image {
+            width: 800px;
+            height: 600px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .modal-info {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="breadcrumb">
+            地铁隧道巡线车智能巡检系统 <span>/</span> 任务列表 <span>/</span> 任务详情
+            <button class="back-btn">← 返回</button>
+        </div>
+        
+        <div class="main-container">
+            <div class="content-area">
+                <div class="image-area">
+                    故障图片显示区域
+                    <br>
+                    (当前查看: 隧道壁面裂缝)
+                </div>
+                
+                <div class="scale-bar-area">
+                    <div class="scale-bar-wrapper">
+                        <div class="scale-bar-text start">0m</div>
+                        <div class="scale-bar-text end">500m</div>
+                        <div class="scale-bar">
+                            <div class="scale-bar-progress"></div>
+                        </div>
+                        
+                        <!-- 故障点标记 -->
+                        <div class="scale-bar-flaw confirmed" style="left: 20%;" title="隧道壁面裂缝">📍</div>
+                        <div class="scale-bar-flaw unconfirmed" style="left: 45%;" title="疑似渗水点">📍</div>
+                        <div class="scale-bar-flaw confirmed" style="left: 70%;" title="设备异响">📍</div>
+                        <div class="scale-bar-flaw false" style="left: 85%;" title="误报-正常">📍</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-header">任务信息</div>
+                    <div class="card-body">
+                        <div class="info-item">
+                            <div class="info-label">📄 巡视任务编号</div>
+                            <div class="info-value">TASK202312010001</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">⏰ 巡视开始时间</div>
+                            <div class="info-value">2023-12-01 09:00:00</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">⏰ 巡视结束时间</div>
+                            <div class="info-value">2023-12-01 10:30:00</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">📍 巡视行驶距离</div>
+                            <div class="info-value">500 米</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">⚠️ 故障总计</div>
+                            <div class="info-value">4</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">✅ 已确定故障</div>
+                            <div class="info-value confirmed-flaw">2</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">❓ 疑似故障</div>
+                            <div class="info-value unconfirmed-flaw">1</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">故障历史</div>
+                    <div class="card-body">
+                        <table class="flaw-table">
+                            <thead>
+                                <tr>
+                                    <th>故障名称</th>
+                                    <th>故障类型</th>
+                                    <th>故障位置</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="confirmed" onclick="viewFlawDetail('隧道壁面裂缝')">
+                                    <td><a href="#" class="link">隧道壁面裂缝</a></td>
+                                    <td>结构缺陷</td>
+                                    <td>100m</td>
+                                </tr>
+                                <tr class="unconfirmed" onclick="viewFlawDetail('疑似渗水点')">
+                                    <td><a href="#" class="link">疑似渗水点</a></td>
+                                    <td>渗漏问题</td>
+                                    <td>225m</td>
+                                </tr>
+                                <tr class="confirmed" onclick="viewFlawDetail('设备异响')">
+                                    <td><a href="#" class="link">设备异响</a></td>
+                                    <td>设备故障</td>
+                                    <td>350m</td>
+                                </tr>
+                                <tr class="false" onclick="viewFlawDetail('误报-正常')">
+                                    <td><a href="#" class="link">误报-正常</a></td>
+                                    <td>误检测</td>
+                                    <td>425m</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 故障详情模态框 -->
+    <div class="modal" id="flawModal">
+        <div class="modal-content">
+            <div class="modal-header" style="font-size: 18px; font-weight: bold; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                故障详情
+            </div>
+            
+            <div class="modal-body">
+                <div class="modal-image">
+                    故障高清图片
+                    <br>
+                    (可预览放大)
+                </div>
+                
+                <div class="modal-info">
+                    <div class="card">
+                        <div class="card-header">故障信息</div>
+                        <div class="card-body">
+                            <div class="info-item">
+                                <div class="info-label">故障名称</div>
+                                <div class="info-value">隧道壁面裂缝</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">故障类型</div>
+                                <div class="info-value">结构缺陷</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">故障描述</div>
+                                <div class="info-value">发现隧道左侧壁面存在约20cm长的裂缝</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">故障位置</div>
+                                <div class="info-value">100m</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">是否属实</div>
+                                <div class="info-value">
+                                    <label><input type="radio" name="confirmed" value="true" checked> 是</label>
+                                    <label style="margin-left: 20px;"><input type="radio" name="confirmed" value="false"> 否</label>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">补充说明</div>
+                                <div class="info-value">
+                                    <textarea style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;" placeholder="请输入内容">需要进一步检查裂缝深度，建议安排专业人员现场勘查</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn" onclick="closeFlawModal()">取 消</button>
+                <button class="btn btn-primary" style="margin-left: 10px; background: #409eff; color: white; border: 1px solid #409eff;">确 定</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function viewFlawDetail(flawName) {
+            document.getElementById('flawModal').classList.add('show');
+        }
+        
+        function closeFlawModal() {
+            document.getElementById('flawModal').classList.remove('show');
+        }
+        
+        // 模拟故障点点击
+        document.querySelectorAll('.scale-bar-flaw').forEach(flaw => {
+            flaw.addEventListener('click', function() {
+                const title = this.getAttribute('title');
+                viewFlawDetail(title);
+            });
+        });
+    </script>
+</body>
+</html> 

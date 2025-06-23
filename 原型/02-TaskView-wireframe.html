@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskView - 任务列表页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+        }
+        
+        .breadcrumb {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .breadcrumb span {
+            margin: 0 5px;
+        }
+        
+        .settings-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .search-form {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: end;
+        }
+        
+        .form-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 150px;
+        }
+        
+        .form-item label {
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .form-item input, .form-item select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #409eff;
+            border-color: #409eff;
+            color: white;
+        }
+        
+        .toolbar {
+            margin-bottom: 20px;
+        }
+        
+        .table-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        thead {
+            background: #fafafa;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        
+        th {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .status-pending {
+            color: #e6a23c;
+        }
+        
+        .status-running {
+            color: #409eff;
+        }
+        
+        .status-uploading {
+            color: #909399;
+        }
+        
+        .status-completed {
+            color: #67c23a;
+        }
+        
+        .link {
+            color: #409eff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+        
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-col {
+            flex: 1;
+        }
+        
+        .alert {
+            background: #fef0f0;
+            border: 1px solid #fbc4c4;
+            color: #f56c6c;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="breadcrumb">
+            地铁隧道巡线车智能巡检系统 <span>/</span> 任务列表
+        </div>
+        
+        <button class="settings-btn">⚙</button>
+        
+        <div class="search-form">
+            <div class="form-item">
+                <label>任务编号</label>
+                <input type="text" placeholder="请输入任务编号">
+            </div>
+            <div class="form-item">
+                <label>创建人</label>
+                <input type="text" placeholder="请输入创建人">
+            </div>
+            <div class="form-item">
+                <label>执行人</label>
+                <input type="text" placeholder="请输入执行人">
+            </div>
+            <div class="form-item">
+                <label>状态</label>
+                <select>
+                    <option value="">请选择</option>
+                    <option value="待巡视">待巡视</option>
+                    <option value="巡视中">巡视中</option>
+                    <option value="待上传">待上传</option>
+                    <option value="已完成">已完成</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary">搜索</button>
+                <button class="btn">重置</button>
+            </div>
+        </div>
+        
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openAddTaskModal()">📹 新增任务</button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="55">序号</th>
+                        <th width="200">任务编号</th>
+                        <th>任务名称</th>
+                        <th width="130">起始地点</th>
+                        <th width="130">任务距离</th>
+                        <th width="130">创建人</th>
+                        <th width="130">执行人</th>
+                        <th width="180">执行时间</th>
+                        <th width="180">完成时间</th>
+                        <th width="120">状态</th>
+                        <th width="120">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><a href="#" class="link">TASK202312010001</a></td>
+                        <td>地铁1号线隧道例行巡检</td>
+                        <td>100 米</td>
+                        <td>500 米</td>
+                        <td>张三</td>
+                        <td>李四</td>
+                        <td>2023-12-01 09:00:00</td>
+                        <td>2023-12-01 10:30:00</td>
+                        <td><span class="status-completed">已完成</span></td>
+                        <td><a href="#" class="link">查看</a></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><a href="#" class="link">TASK202312010002</a></td>
+                        <td>设备故障排查巡检</td>
+                        <td>200 米</td>
+                        <td>300 米</td>
+                        <td>王五</td>
+                        <td>赵六</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="status-pending">待巡视</span></td>
+                        <td>
+                            <a href="#" class="link">修改</a>
+                            <a href="#" class="link" style="margin-left: 10px;">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><a href="#" class="link">TASK202312010003</a></td>
+                        <td>夜间安全巡检</td>
+                        <td>50 米</td>
+                        <td>800 米</td>
+                        <td>陈七</td>
+                        <td>刘八</td>
+                        <td>2023-12-01 22:00:00</td>
+                        <td>-</td>
+                        <td><span class="status-uploading">待上传</span></td>
+                        <td><a href="#" class="link">上传</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="pagination">
+            <span>共 3 条记录，每页 10 条</span>
+            <button class="btn">上一页</button>
+            <button class="btn btn-primary">1</button>
+            <button class="btn">下一页</button>
+        </div>
+    </div>
+    
+    <!-- 新增/修改任务模态框 -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">新增任务</div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-item">
+                        <label>任务名称 *</label>
+                        <input type="text" placeholder="请输入任务名称" maxlength="50">
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-item">
+                        <label>任务编号 *</label>
+                        <input type="text" placeholder="请输入任务编号" maxlength="20">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-item">
+                        <label>起始地点 *</label>
+                        <input type="number" placeholder="请输入起始地点">
+                        <span style="margin-left: 5px;">M</span>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-item">
+                        <label>任务距离 *</label>
+                        <input type="number" placeholder="请输入任务距离">
+                        <span style="margin-left: 5px;">M</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-item">
+                        <label>创建人 *</label>
+                        <input type="text" placeholder="请输入创建人" maxlength="10">
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-item">
+                        <label>执行人 *</label>
+                        <input type="text" placeholder="请输入执行人" maxlength="10">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-item">
+                <label>备注</label>
+                <textarea placeholder="请输入备注" maxlength="250" style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+            </div>
+            
+            <div class="alert" id="startAlert" style="display: none;">
+                点击下方[启动]按钮后巡线车将开始工作，请确保车辆周围环境安全。
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button class="btn" onclick="closeTaskModal()">取消</button>
+                <button class="btn btn-primary" style="margin-left: 10px;">确定</button>
+                <button class="btn" id="startBtn" style="margin-left: 10px; background: #67c23a; border-color: #67c23a; color: white; display: none;">启动</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function openAddTaskModal() {
+            document.getElementById('taskModal').classList.add('show');
+        }
+        
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('show');
+        }
+        
+        // 模拟数据上传对话框
+        function openUploadModal() {
+            alert('上传功能模拟');
+        }
+    </script>
+</body>
+</html> 
