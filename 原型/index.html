@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGV智能巡检系统 - 低保真原型导航</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .header .description {
+            font-size: 14px;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .page-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .page-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .page-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .page-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .page-features {
+            margin-bottom: 25px;
+        }
+
+        .page-features h4 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .feature-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .feature-tag {
+            background: #f0f2ff;
+            color: #667eea;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .page-link {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .page-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .page-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #67c23a;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 50px;
+        }
+
+        .tech-info {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tech-info h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .tech-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .tech-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .route-flow {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .route-flow h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .flow-steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .flow-step {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .flow-arrow {
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚛 AGV智能巡检系统</h1>
+            <p class="subtitle">低保真原型页面导航</p>
+            <p class="description">
+                地铁隧道巡线车智能巡检系统的交互原型展示。本系统实现了AGV自动巡检、实时监控、故障识别、数据上传等核心功能。
+            </p>
+        </div>
+
+        <div class="page-grid">
+            <div class="page-card">
+                <div class="page-status"></div>
+                <span class="page-icon">🔧</span>
+                <h3 class="page-title">系统初始化页面</h3>
+                <p class="page-description">
+                    系统启动时的自检页面，检查文件完整性、数据库连接、AGV通信和摄像头状态，确保系统正常运行。
+                </p>
+                <div class="page-features">
+                    <h4>主要功能：</h4>
+                    <div class="feature-list">
+                        <span class="feature-tag">系统自检</span>
+                        <span class="feature-tag">状态展示</span>
+                        <span class="feature-tag">错误诊断</span>
+                        <span class="feature-tag">设置入口</span>
+                    </div>
+                </div>
+                <a href="01-InitView-wireframe.html" class="page-link">查看原型</a>
+            </div>
+
+            <div class="page-card">
+                <div class="page-status"></div>
+                <span class="page-icon">📋</span>
+                <h3 class="page-title">任务列表页面</h3>
+                <p class="page-description">
+                    巡检任务管理中心，支持任务的创建、编辑、删除、搜索和状态管理，提供完整的任务生命周期管理。
+                </p>
+                <div class="page-features">
+                    <h4>主要功能：</h4>
+                    <div class="feature-list">
+                        <span class="feature-tag">任务搜索</span>
+                        <span class="feature-tag">新增任务</span>
+                        <span class="feature-tag">状态管理</span>
+                        <span class="feature-tag">数据上传</span>
+                    </div>
+                </div>
+                <a href="02-TaskView-wireframe.html" class="page-link">查看原型</a>
+            </div>
+
+            <div class="page-card">
+                <div class="page-status"></div>
+                <span class="page-icon">📊</span>
+                <h3 class="page-title">任务详情页面</h3>
+                <p class="page-description">
+                    已完成任务的详细查看页面，展示故障图片、位置标记、处理结果，支持故障确认和备注功能。
+                </p>
+                <div class="page-features">
+                    <h4>主要功能：</h4>
+                    <div class="feature-list">
+                        <span class="feature-tag">故障图片</span>
+                        <span class="feature-tag">位置标记</span>
+                        <span class="feature-tag">故障确认</span>
+                        <span class="feature-tag">进度展示</span>
+                    </div>
+                </div>
+                <a href="03-TaskDetailView-wireframe.html" class="page-link">查看原型</a>
+            </div>
+
+            <div class="page-card">
+                <div class="page-status"></div>
+                <span class="page-icon">🎥</span>
+                <h3 class="page-title">任务执行页面</h3>
+                <p class="page-description">
+                    实时巡检控制台，显示视频流、AGV状态、实时位置，支持车辆控制和故障实时处理。
+                </p>
+                <div class="page-features">
+                    <h4>主要功能：</h4>
+                    <div class="feature-list">
+                        <span class="feature-tag">实时视频</span>
+                        <span class="feature-tag">车辆控制</span>
+                        <span class="feature-tag">实时监控</span>
+                        <span class="feature-tag">故障处理</span>
+                    </div>
+                </div>
+                <a href="04-TaskExecuteView-wireframe.html" class="page-link">查看原型</a>
+            </div>
+
+            <div class="page-card">
+                <div class="page-status"></div>
+                <span class="page-icon">⚙️</span>
+                <h3 class="page-title">系统设置页面</h3>
+                <p class="page-description">
+                    系统配置管理页面，设置AGV连接参数、摄像头配置、云端平台地址等系统核心参数。
+                </p>
+                <div class="page-features">
+                    <h4>主要功能：</h4>
+                    <div class="feature-list">
+                        <span class="feature-tag">AGV配置</span>
+                        <span class="feature-tag">摄像头设置</span>
+                        <span class="feature-tag">云端配置</span>
+                        <span class="feature-tag">参数验证</span>
+                    </div>
+                </div>
+                <a href="05-SettingsView-wireframe.html" class="page-link">查看原型</a>
+            </div>
+        </div>
+
+        <div class="route-flow">
+            <h3>🔄 页面流程</h3>
+            <div class="flow-steps">
+                <span class="flow-step">系统初始化</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">任务列表</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">新增/执行任务</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-step">任务详情</span>
+                <span class="flow-arrow">↗</span>
+                <span class="flow-step">系统设置</span>
+            </div>
+        </div>
+
+        <div class="tech-info">
+            <h3>🛠 技术栈信息</h3>
+            <div class="tech-list">
+                <div class="tech-item">
+                    <span>🖼</span>
+                    <span>前端框架：Vue.js 3.x</span>
+                </div>
+                <div class="tech-item">
+                    <span>🎨</span>
+                    <span>UI组件：Element Plus</span>
+                </div>
+                <div class="tech-item">
+                    <span>🛣</span>
+                    <span>路由管理：Vue Router</span>
+                </div>
+                <div class="tech-item">
+                    <span>📦</span>
+                    <span>状态管理：Pinia</span>
+                </div>
+                <div class="tech-item">
+                    <span>🔌</span>
+                    <span>HTTP客户端：Axios</span>
+                </div>
+                <div class="tech-item">
+                    <span>📱</span>
+                    <span>响应式设计：CSS3 Grid/Flexbox</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 AGV智能巡检系统 - 低保真原型设计</p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                本原型仅用于设计展示，实际功能需要后端API支持
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 添加一些交互效果
+        document.querySelectorAll('.page-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // 模拟状态指示器
+        function updateStatus() {
+            document.querySelectorAll('.page-status').forEach(status => {
+                const colors = ['#67c23a', '#e6a23c', '#f56c6c'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                status.style.background = randomColor;
+            });
+        }
+
+        // 每5秒更新一次状态
+        setInterval(updateStatus, 5000);
+    </script>
+</body>
+</html>

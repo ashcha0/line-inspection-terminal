@@ -1,0 +1,20 @@
+{
+  // 使用相对路径来继承基础配置，以避免Vite启动时的解析问题
+  "extends": "@tsconfig/node22/tsconfig.json",
+  // 包含所有需要在 Node.js 环境中运行的配置文件
+  "include": ["vite.config.*", "vitest.config.*", "cypress.config.*", "playwright.config.*"],
+  // 覆盖或添加编译器选项
+  "compilerOptions": {
+    // 保持 composite 模式
+    "composite": true,
+    // 明确指定需要包含的类型定义
+    "types": ["node"],
+    // 以下是关键的补充配置
+    // 使用最新的 ESNext 模块系统
+    "module": "ESNext",
+    // 使用 Vite 和现代打包工具推荐的模块解析策略 'Bundler'
+    "moduleResolution": "Bundler",
+    // 允许从没有默认导出的模块中默认导入，提高兼容性
+    "allowSyntheticDefaultImports": true
+  }
+}
