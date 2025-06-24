@@ -48,6 +48,7 @@ let db = {
     sysTime: new Date().toISOString(),
     isRunning: false,
     currentPosition: 0.0,
+    direction: 'forward' // 新增方向状态：'forward' 或 'backward'
   }
 };
 
@@ -93,6 +94,49 @@ apiRouter.get('/agv/flaw/list', (req, res) => {
     res.json(createPageInfo(flaws, flaws.length));
 });
 
+apiRouter.get('/agv/flaw/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    console.log(`GET /agv/flaw/${id} -> 获取缺陷详情`);
+    const flaw = db.flaws.find(f => f.id === id);
+    if (flaw) {
+        res.json(createSuccessResponse(flaw));
+    } else {
+        res.status(404).json(createErrorResponse('未找到缺陷'));
+    }
+});
+
+apiRouter.post('/agv/flaw', (req, res) => {
+    const flawData = req.body;
+    console.log(`POST /agv/flaw -> 新增缺陷`, flawData);
+    const newFlaw = { ...flawData, id: flawIdCounter++, createTime: new Date().toISOString() };
+    db.flaws.push(newFlaw);
+    res.json(createSuccessResponse(newFlaw));
+});
+
+apiRouter.put('/agv/flaw', (req, res) => {
+    const flawData = req.body;
+    console.log(`PUT /agv/flaw -> 更新缺陷 ${flawData.id}`, flawData);
+    const index = db.flaws.findIndex(f => f.id === flawData.id);
+    if (index !== -1) {
+        db.flaws[index] = { ...db.flaws[index], ...flawData };
+        res.json(createSuccessResponse(db.flaws[index]));
+    } else {
+        res.status(404).json(createErrorResponse('未找到缺陷'));
+    }
+});
+
+apiRouter.delete('/agv/flaw/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    console.log(`DELETE /agv/flaw/${id} -> 删除缺陷`);
+    const index = db.flaws.findIndex(f => f.id === id);
+    if (index !== -1) {
+        db.flaws.splice(index, 1);
+        res.json(createSuccessResponse(null));
+    } else {
+        res.status(404).json(createErrorResponse('未找到缺陷'));
+    }
+});
+
 apiRouter.get('/agv/flaw/live/:id', (req, res) => {
     // 模拟实时发现新缺陷
     if (Math.random() > 0.7) {
@@ -121,18 +165,13 @@ apiRouter.get('/agv/flaw/live/:id', (req, res) => {
     }
 });
 
-apiRouter.put('/agv/flaw', (req, res) => {
-    const flawData = req.body;
-    console.log(`PUT /agv/flaw -> 更新缺陷 ${flawData.id}`, flawData);
-    const index = db.flaws.findIndex(f => f.id === flawData.id);
-    if (index !== -1) {
-        db.flaws[index] = { ...db.flaws[index], ...flawData };
-        res.json(createSuccessResponse(db.flaws[index]));
-    } else {
-        res.status(404).json(createErrorResponse('未找到缺陷'));
-    }
+apiRouter.get('/agv/flaw/check/:id', (req, res) => {
+    const taskId = parseInt(req.params.id, 10);
+    console.log(`GET /agv/flaw/check/${taskId} -> 检查缺陷确认状态`);
+    const taskFlaws = db.flaws.filter(f => f.taskId === taskId);
+    const allConfirmed = taskFlaws.length > 0 && taskFlaws.every(f => f.confirmed);
+    res.json(createSuccessResponse(allConfirmed));
 });
-
 
 // ===================================
 // 3. AGV移动控制相关接口 (/agv/movement)
@@ -140,7 +179,16 @@ apiRouter.put('/agv/flaw', (req, res) => {
 apiRouter.get('/agv/movement/heartbeat', (req, res) => {
     db.agvStatus.sysTime = new Date().toISOString();
     if (db.agvStatus.isRunning) {
-        db.agvStatus.currentPosition += 5.5; // 模拟前进
+        // 根据方向决定距离变化
+        if (db.agvStatus.direction === 'forward') {
+            db.agvStatus.currentPosition += 5.5; // 前进时增加距离
+        } else if (db.agvStatus.direction === 'backward') {
+            db.agvStatus.currentPosition -= 5.5; // 后退时减少距离
+            // 确保距离不会变成负数
+            if (db.agvStatus.currentPosition < 0) {
+                db.agvStatus.currentPosition = 0;
+            }
+        }
     }
     console.log(`GET /agv/movement/heartbeat -> AGV状态`, db.agvStatus);
     res.json(createSuccessResponse(db.agvStatus));
@@ -152,12 +200,14 @@ apiRouter.post('/agv/movement/:action', (req, res) => {
     switch(action) {
         case 'forward':
             db.agvStatus.isRunning = true;
+            db.agvStatus.direction = 'forward';
             break;
         case 'stop':
             db.agvStatus.isRunning = false;
             break;
         case 'backward':
-            db.agvStatus.isRunning = true; // 简单模拟
+            db.agvStatus.isRunning = true;
+            db.agvStatus.direction = 'backward';
             break;
     }
     res.json(createSuccessResponse(`AGV ${action} command received`));
@@ -204,6 +254,17 @@ apiRouter.get('/agv/task/list', (req, res) => {
     res.json(createPageInfo(paginatedTasks, total));
 });
 
+apiRouter.get('/agv/task/:id', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    console.log(`GET /agv/task/${id} -> 获取任务详情`);
+    const task = db.tasks.find(t => t.id === id);
+    if (task) {
+        res.json(createSuccessResponse(task));
+    } else {
+        res.status(404).json(createErrorResponse('未找到任务'));
+    }
+});
+
 apiRouter.post('/agv/task', (req, res) => {
     const newTask = { ...req.body, id: taskIdCounter++, createTime: new Date().toISOString(), taskStatus: '待巡视' };
     console.log('POST /agv/task -> 新建任务', newTask);
@@ -240,6 +301,7 @@ apiRouter.post('/agv/task/start/:id', (req, res) => {
         task.execTime = new Date().toISOString();
         db.agvStatus.isRunning = true;
         db.agvStatus.currentPosition = 0;
+        db.agvStatus.direction = 'forward'; // 任务开始时默认为前进方向
         res.json(createSuccessResponse(null));
     } else {
         res.status(404).json(createErrorResponse('未找到任务'));
